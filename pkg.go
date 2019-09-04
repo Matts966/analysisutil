@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Matts966/analysisutil"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/ssa"
 )
@@ -40,7 +39,7 @@ func PkgUsedInFunc(pass *analysis.Pass, pkgPath string, f *ssa.Function) bool {
 		return false
 	}
 
-	ff := analysisutil.File(pass, fo.Pos())
+	ff := File(pass, fo.Pos())
 	if ff == nil {
 		return false
 	}
@@ -49,7 +48,7 @@ func PkgUsedInFunc(pass *analysis.Pass, pkgPath string, f *ssa.Function) bool {
 		if err != nil {
 			continue
 		}
-		if analysisutil.RemoveVendor(path) == pkgPath {
+		if RemoveVendor(path) == pkgPath {
 			return true
 		}
 	}
@@ -68,7 +67,7 @@ func PkgUsedInPass(pkgPath string, pass *analysis.Pass) bool {
 			if err != nil {
 				continue
 			}
-			if analysisutil.RemoveVendor(path) == pkgPath {
+			if RemoveVendor(path) == pkgPath {
 				return true
 			}
 		}

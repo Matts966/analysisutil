@@ -2,7 +2,6 @@ package analysisutil_test
 
 import (
 	"go/types"
-	"log"
 	"testing"
 
 	"github.com/Matts966/analysisutil"
@@ -31,9 +30,7 @@ func Test(t *testing.T) {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	st = analysisutil.LookupFromImports([]*types.Package{
-		pass.ResultOf[buildssa.Analyzer].(*buildssa.SSA).Pkg.Pkg,
-	}, "b", "st").Type().(*types.Named)
+	st = analysisutil.TypeOf(pass, "b", "*st")
 	close = analysisutil.MethodOf(st, "b.close")
 	doSomethingAndReturnSt = analysisutil.MethodOf(st, "b.doSomethingAndReturnSt")
 
@@ -45,9 +42,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					continue
 				}
 				called, ok := analysisutil.CalledFrom(b, i, st, close)
-				log.Println(called, ok)
 				if !(called && ok) {
-					pass.Reportf(instr.Pos(), "close should be called after calling doSomething")
+					pass.Reportf(instr.Pos(), close.Name()+" should be called after calling "+doSomethingAndReturnSt.Name())
 				}
 			}
 		}

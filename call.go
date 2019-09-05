@@ -122,6 +122,8 @@ func isReferrer(a, b ssa.Value) bool {
 // The first result is above value.
 // The second result is whether type of i-th instruction does not much receiver
 // or matches with ignore cases.
+// From uses types.Type and return value of i-th instruction as the receiver and 
+// check it.
 func (c *CalledChecker) From(b *ssa.BasicBlock, i int, receiver types.Type, methods ...*types.Func) (called, ok bool) {
 	if b == nil || i < 0 || i >= len(b.Instrs) ||
 		receiver == nil || len(methods) == 0 {
@@ -283,6 +285,8 @@ func (c *calledFrom) succs(b *ssa.BasicBlock) bool {
 // The first result is above value.
 // The second result is whether type of i-th instruction does not much receiver
 // or matches with ignore cases.
+// CalledFrom uses types.Type and return value of i-th instruction as the receiver and 
+// check it.
 func CalledFrom(b *ssa.BasicBlock, i int, receiver types.Type, methods ...*types.Func) (called, ok bool) {
 	return new(CalledChecker).From(b, i, receiver, methods...)
 }
@@ -304,6 +308,8 @@ func ReturnReceiverIfCalled(instr ssa.Instruction, f *types.Func) ssa.Value {
 // The first result is above value.
 // The second result is whether type of i-th instruction does not much receiver
 // or matches with ignore cases.
+// Before uses types.Type and return value of i-th instruction as the receiver and 
+// check it.
 func (c *CalledChecker) Before(b *ssa.BasicBlock, i int, receiver types.Type, methods ...*types.Func) (called, ok bool) {
 	if b == nil || i < 0 || i >= len(b.Instrs) ||
 		receiver == nil || len(methods) == 0 {

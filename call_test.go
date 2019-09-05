@@ -1,19 +1,12 @@
 package analysisutil_test
 
 import (
-	"go/types"
 	"testing"
 
 	"github.com/Matts966/analysisutil"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
-)
-
-var (
-	st                     types.Type
-	close                  *types.Func
-	doSomethingAndReturnSt *types.Func
 )
 
 var Analyzer = &analysis.Analyzer{
@@ -30,21 +23,42 @@ func Test(t *testing.T) {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	st = analysisutil.TypeOf(pass, "b", "*st")
-	close = analysisutil.MethodOf(st, "b.close")
-	doSomethingAndReturnSt = analysisutil.MethodOf(st, "b.doSomethingAndReturnSt")
+	st := analysisutil.TypeOf(pass, "b", "*st")
+	open := analysisutil.MethodOf(st, "b.open")
+	close := analysisutil.MethodOf(st, "b.close")
+	doSomething := analysisutil.MethodOf(st, "b.doSomething")
+	doSomethingSpecial := analysisutil.MethodOf(st, "b.doSomethingSpecial")
+	errFunc := analysisutil.MethodOf(st, "b.err")
+	ie := analysisutil.ObjectOf(pass, "io", "EOF")
 
 	funcs := pass.ResultOf[buildssa.Analyzer].(*buildssa.SSA).SrcFuncs
 	for _, f := range funcs {
 		for _, b := range f.Blocks {
 			for i, instr := range b.Instrs {
-				if !analysisutil.Called(instr, nil, doSomethingAndReturnSt) {
+				recv := analysisutil.ReturnReceiverIfCalled(instr, doSomething)
+				if recv == nil {
 					continue
 				}
-				called, ok := analysisutil.CalledFrom(b, i, st, close)
-				if !(called && ok) {
-					pass.Reportf(instr.Pos(), close.Name()+" should be called after calling "+doSomethingAndReturnSt.Name())
+				if called, ok := analysisutil.CalledFromAfter(b, i, recv, close); !(called && ok) {
+					pass.Reportf(instr.Pos(), "close should be called after calling doSomething")
 				}
+				if called, ok := analysisutil.CalledFromBefore(b, i, recv, open); !(called && ok) {
+					pass.Reportf(instr.Pos(), "open should be called before calling doSomething")
+				}
+			}
+
+			for i, instr := range b.Instrs {
+				recv := analysisutil.ReturnReceiverIfCalled(instr, doSomethingSpecial)
+				if recv == nil {
+					continue
+				}
+				if called, ok := analysisutil.CalledFromBefore(b, i, recv, errFunc); !(called && ok) {
+					pass.Reportf(instr.Pos(), "err not called")
+				}
+				if analysisutil.CalledBeforeAndEqualTo(b, recv, errFunc, ie) {
+					continue
+				}
+				pass.Reportf(instr.Pos(), "err should be io.EOF when calling doSomethingSpecial")
 			}
 		}
 	}

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gostaticanalysis/analysisutil"
+	"github.com/Matts966/analysisutil"
 	"golang.org/x/tools/go/ssa"
 )
 
@@ -60,6 +60,38 @@ func Test_Phi(t *testing.T) {
 			var b ssa.BasicBlock
 			b.Instrs = tt.instrs
 			got := analysisutil.Phi(&b)
+			if !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("want %#v but got %#v", tt.want, got)
+			}
+		})
+	}
+}
+
+func Test_BinOp(t *testing.T) {
+	type I = ssa.Instruction
+	var bo1, bo2 ssa.BinOp
+	var i = ssa.If{
+		Cond: &bo1,
+	}
+	tests := []struct {
+		name   string
+		instrs []ssa.Instruction
+		want   []*ssa.BinOp
+	}{
+		{"empty", []I{}, nil},
+		{"B", []I{&bo1}, []*ssa.BinOp{&bo1}},
+		{"B_", []I{&bo1, nil}, []*ssa.BinOp{&bo1}},
+		{"_B", []I{nil, &bo1}, []*ssa.BinOp{&bo1}},
+		{"BB", []I{&bo1, &bo2}, []*ssa.BinOp{&bo1, &bo2}},
+		{"B_If", []I{&bo1, nil, &i}, []*ssa.BinOp{&bo1}},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			var b ssa.BasicBlock
+			b.Instrs = tt.instrs
+			got := analysisutil.BinOp(&b)
 			if !reflect.DeepEqual(tt.want, got) {
 				t.Errorf("want %#v but got %#v", tt.want, got)
 			}

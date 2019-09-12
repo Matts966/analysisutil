@@ -118,3 +118,19 @@ loop:
 func test10() {
 	getSt() // want `close should be called for st`
 }
+
+// With extract
+func test11() {
+	_, _ = getSt() // want `close should be called for st`
+}
+
+func test12() {
+	s, _ := getSt() // OK
+	s.close()
+}
+
+// With defer
+func test13() {
+	s, _ := getSt() // OK
+	defer s.close()
+}

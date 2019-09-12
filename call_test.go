@@ -35,6 +35,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	for _, f := range funcs {
 		for _, b := range f.Blocks {
 			for i, instr := range b.Instrs {
+				if called, ok := analysisutil.CalledFrom(b, i, st, close); ok && !called {
+					pass.Reportf(instr.Pos(), "close should be called for st")
+				}
+			}
+
+			for i, instr := range b.Instrs {
 				recv := analysisutil.ReturnReceiverIfCalled(instr, doSomething)
 				if recv == nil {
 					continue

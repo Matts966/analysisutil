@@ -135,7 +135,15 @@ func (c *CalledChecker) From(b *ssa.BasicBlock, i int, receiver types.Type, meth
 		return false, false
 	}
 
-	if !identical(v.Type(), receiver) {
+	if vt, ok := v.Type().(*types.Tuple); ok && vt != nil {
+		for i := 0; i < vt.Len(); i++ {
+			if identical(vt.At(i).Type(), receiver) {
+				break
+			} else if i == vt.Len()-1 {
+				return false, false
+			}
+		}
+	} else if !identical(v.Type(), receiver) {
 		return false, false
 	}
 

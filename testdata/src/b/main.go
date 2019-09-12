@@ -24,8 +24,10 @@ func (*st) doSomethingSpecial() {}
 
 func (*st) err() error { return nil }
 
+func getSt() (*st, error) { return new(st), nil }
+
 func test1() {
-	var s st
+	var s st // want `close should be called for st`
 	s.open()
 	s.doSomething() // want `close should be called after calling doSomething`
 }
@@ -60,14 +62,14 @@ func test4() {
 }
 
 func test5() {
-	var s st
+	var s st // want `close should be called for st`
 	s.open()
 	s.doSomething() // want `close should be called after calling doSomething`
 	s.doSomething() // want `close should be called after calling doSomething`
 }
 
 func test6() {
-	var s st
+	var s st // want `close should be called for st`
 	if !s.open() {
 		return
 	}
@@ -75,7 +77,7 @@ func test6() {
 }
 
 func test7() {
-	var s st
+	var s st // want `close should be called for st`
 	if s.err() != io.EOF {
 		return
 	}
@@ -83,7 +85,7 @@ func test7() {
 }
 
 func test8() {
-	var s st
+	var s st // want `close should be called for st`
 	if s.err() != nil {
 		return
 	}
@@ -91,7 +93,7 @@ func test8() {
 }
 
 func test9() {
-	var s st
+	var s st // want `close should be called for st`
 	se := s.err()
 loop:
 	// Check if the analyzer properly stops and lints in cycle.
@@ -111,4 +113,8 @@ loop:
 		s.doSomethingSpecial()
 	}
 	return
+}
+
+func test10() {
+	getSt() // want `close should be called for st`
 }

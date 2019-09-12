@@ -120,10 +120,9 @@ func isReferrer(a, b ssa.Value) bool {
 // From checks whether receiver's method is called in an instruction
 // which belogns to after i-th instructions, or in succsor blocks of b.
 // The first result is above value.
-// The second result is whether type of i-th instruction does not much receiver
-// or matches with ignore cases.
-// From uses types.Type and return value of i-th instruction as the receiver and 
-// check it.
+// The second result is whether type of i-th instruction does not match receiver
+// or matches with ignore cases. This compares a types.Type to the type of return value
+// of i-th instruction and use it as the receiver and check it.
 func (c *CalledChecker) From(b *ssa.BasicBlock, i int, receiver types.Type, methods ...*types.Func) (called, ok bool) {
 	if b == nil || i < 0 || i >= len(b.Instrs) ||
 		receiver == nil || len(methods) == 0 {
@@ -135,7 +134,15 @@ func (c *CalledChecker) From(b *ssa.BasicBlock, i int, receiver types.Type, meth
 		return false, false
 	}
 
+	// Checker ignores extract instructions because they don't have
+	// position information and only checking CallInstruction is enough.
+	if _, ok := b.Instrs[i].(*ssa.Extract); ok {
+		return false, false
+	}
 	if vt, ok := v.Type().(*types.Tuple); ok && vt != nil {
+		if b.Instrs[i].Pos() == token.NoPos {
+			return false, false
+		}
 		for i := 0; i < vt.Len(); i++ {
 			if identical(vt.At(i).Type(), receiver) {
 				break
@@ -293,7 +300,7 @@ func (c *calledFrom) succs(b *ssa.BasicBlock) bool {
 // The first result is above value.
 // The second result is whether type of i-th instruction does not much receiver
 // or matches with ignore cases.
-// CalledFrom uses types.Type and return value of i-th instruction as the receiver and 
+// CalledFrom uses types.Type and return value of i-th instruction as the receiver and
 // check it.
 func CalledFrom(b *ssa.BasicBlock, i int, receiver types.Type, methods ...*types.Func) (called, ok bool) {
 	return new(CalledChecker).From(b, i, receiver, methods...)
@@ -316,7 +323,7 @@ func ReturnReceiverIfCalled(instr ssa.Instruction, f *types.Func) ssa.Value {
 // The first result is above value.
 // The second result is whether type of i-th instruction does not much receiver
 // or matches with ignore cases.
-// Before uses types.Type and return value of i-th instruction as the receiver and 
+// Before uses types.Type and return value of i-th instruction as the receiver and
 // check it.
 func (c *CalledChecker) Before(b *ssa.BasicBlock, i int, receiver types.Type, methods ...*types.Func) (called, ok bool) {
 	if b == nil || i < 0 || i >= len(b.Instrs) ||
@@ -401,7 +408,7 @@ func (c *calledFrom) preds(b *ssa.BasicBlock) bool {
 	return true
 }
 
-// TODO(Matts966): Memorize paths when checking block recursively and check 
+// TODO(Matts966): Memorize paths when checking block recursively and check
 // only all of them if their call is equal to o.
 func (c *calledFrom) predsAndEqualTo(b *ssa.BasicBlock, o types.Object) bool {
 	if c.done == nil {
